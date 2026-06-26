@@ -13,9 +13,10 @@ namespace Autoglass.PlataformaHUB.Domain.Services
     /// </summary>
     public class RelatorioService : IRelatorioService
     {
-        private readonly IMontadorRelatorioUsoPlataforma _montadorUsoPlataforma;
+        private readonly IMontadorRelatorio<RelatorioUsoPlataformaParametros, RelatorioUsoPlataforma> _montadorUsoPlataforma;
 
-        public RelatorioService(IMontadorRelatorioUsoPlataforma montadorUsoPlataforma)
+        public RelatorioService(
+            IMontadorRelatorio<RelatorioUsoPlataformaParametros, RelatorioUsoPlataforma> montadorUsoPlataforma)
         {
             _montadorUsoPlataforma = montadorUsoPlataforma;
         }
@@ -24,6 +25,6 @@ namespace Autoglass.PlataformaHUB.Domain.Services
             DateTime inicio,
             DateTime fim,
             CancellationToken cancellationToken = default)
-            => _montadorUsoPlataforma.MontarAsync(inicio, fim, cancellationToken);
+            => _montadorUsoPlataforma.MontarAsync(new RelatorioUsoPlataformaParametros(inicio, fim), cancellationToken);
     }
 }

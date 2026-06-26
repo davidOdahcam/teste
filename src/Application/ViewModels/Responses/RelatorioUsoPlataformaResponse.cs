@@ -35,11 +35,10 @@ namespace Autoglass.PlataformaHUB.Application.ViewModels.Responses
 
     // ---------- Aba: Visão Serviços ----------
 
+    public sealed record IndicadorServicoResponse(string Rotulo, decimal Valor, string Formato);
+
     public sealed record DetalheServicoResponse(
-        long? Aplicacoes,
-        string RotuloTotalPrincipal,
-        long TotalPrincipal,
-        decimal? HorasEconomizadas,
+        IReadOnlyList<IndicadorServicoResponse> Indicadores,
         IReadOnlyList<PontoTemporalResponse> AtividadePorPeriodo,
         IReadOnlyList<ValorPorRotuloResponse> Especificacoes);
 

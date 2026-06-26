@@ -63,10 +63,8 @@ namespace Autoglass.PlataformaHUB.Application.Services
             DetalheServicoResponse? detalhe = servico.Detalhe is null
                 ? null
                 : new DetalheServicoResponse(
-                    servico.Detalhe.Aplicacoes,
-                    servico.Detalhe.RotuloTotalPrincipal,
-                    servico.Detalhe.TotalPrincipal,
-                    servico.Detalhe.HorasEconomizadas,
+                    servico.Detalhe.Indicadores
+                        .Select(i => new IndicadorServicoResponse(i.Rotulo, i.Valor, i.Formato.ToString())).ToList(),
                     servico.Detalhe.AtividadePorPeriodo.Select(MapearPonto).ToList(),
                     servico.Detalhe.Especificacoes
                         .Select(e => new ValorPorRotuloResponse(e.Rotulo, e.Quantidade)).ToList());

@@ -43,11 +43,18 @@ namespace Autoglass.PlataformaHUB.Domain.Relatorios
 
     // ---------- Aba: Visão Serviços ----------
 
+    /// <summary>Formato de exibição do valor de um indicador (KPI).</summary>
+    public enum FormatoIndicador
+    {
+        Quantidade,
+        Horas
+    }
+
+    /// <summary>Indicador (KPI) calculado de um serviço, pronto para exibição.</summary>
+    public sealed record IndicadorServico(string Rotulo, decimal Valor, FormatoIndicador Formato);
+
     public sealed record DetalheServico(
-        long? Aplicacoes,
-        string RotuloTotalPrincipal,
-        long TotalPrincipal,
-        decimal? HorasEconomizadas,
+        IReadOnlyList<IndicadorServico> Indicadores,
         IReadOnlyList<PontoTemporal> AtividadePorPeriodo,
         IReadOnlyList<ValorPorRotulo> Especificacoes);
 
@@ -74,4 +81,7 @@ namespace Autoglass.PlataformaHUB.Domain.Relatorios
         VisaoGeral VisaoGeral,
         IReadOnlyList<ServicoDetalhado> VisaoServicos,
         VisaoEmpresas Empresas);
+
+    /// <summary>Parâmetros de entrada do relatório de uso da plataforma.</summary>
+    public sealed record RelatorioUsoPlataformaParametros(DateTime Inicio, DateTime Fim);
 }

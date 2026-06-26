@@ -14,10 +14,12 @@ namespace Autoglass.PlataformaHUB.Domain.Services
 {
     /// <summary>
     /// Monta o relatório de uso da plataforma. O método raiz busca os dados de apuração e
-    /// delega cada visão do relatório a um método privado. A estrutura é sempre montada a partir
-    /// do <see cref="CatalogoServicos"/>, garantindo o relatório completo mesmo sem métricas.
+    /// delega cada visão do relatório a um método privado, onde fica a regra de negócio.
+    /// A estrutura é sempre montada a partir do <see cref="CatalogoServicos"/>, garantindo
+    /// o relatório completo mesmo sem métricas.
     /// </summary>
-    public class MontadorRelatorioUsoPlataforma : IMontadorRelatorioUsoPlataforma
+    public class MontadorRelatorioUsoPlataforma
+        : IMontadorRelatorio<RelatorioUsoPlataformaParametros, RelatorioUsoPlataforma>
     {
         private readonly IMetricaRepository _metricaRepository;
 
@@ -27,10 +29,11 @@ namespace Autoglass.PlataformaHUB.Domain.Services
         }
 
         public async Task<RelatorioUsoPlataforma> MontarAsync(
-            DateTime inicio,
-            DateTime fim,
+            RelatorioUsoPlataformaParametros parametros,
             CancellationToken cancellationToken = default)
         {
+            var (inicio, fim) = parametros;
+
             IReadOnlyList<Metrica> metricas = await _metricaRepository
                 .ObterPorPeriodoAsync(inicio, fim, cancellationToken);
 
@@ -40,7 +43,17 @@ namespace Autoglass.PlataformaHUB.Domain.Services
             IReadOnlyDictionary<ContextoMetricaEnum, long> aplicacoes = await _metricaRepository
                 .ObterValorMaisRecentePorContextoAsync(CatalogoServicos.ChaveAplicacoes, cancellationToken);
 
-            var apuracao = new ApuracaoMetricas(metricas, ultimoAcesso, aplicacoes);
+            var totaisPorContextoChave = metricas
+                .GroupBy(m => (m.Contexto, m.Chave))
+                .ToDictionary(g => g.Key, g => g.Sum(m => m.Valor));
+
+            var acessosPorContexto = metricas
+                .Where(m => m.Chave == CatalogoServicos.ChaveAcessos)
+                .GroupBy(m => m.Contexto)
+                .ToDictionary(g => g.Key, g => g.Sum(m => m.Valor));
+
+            var apuracao = new ContextoApuracao(
+                metricas, ultimoAcesso, aplicacoes, totaisPorContextoChave, acessosPorContexto);
 
             IReadOnlyList<ServicoDetalhado> servicos = MontarVisaoServicos(apuracao);
             VisaoGeral visaoGeral = MontarVisaoGeral(apuracao, servicos);
@@ -50,24 +63,66 @@ namespace Autoglass.PlataformaHUB.Domain.Services
         }
 
         // ---------- Visão Serviços ----------
-        private static IReadOnlyList<ServicoDetalhado> MontarVisaoServicos(ApuracaoMetricas apuracao)
+        private static IReadOnlyList<ServicoDetalhado> MontarVisaoServicos(ContextoApuracao apuracao)
         {
+            long Somar(ContextoMetricaEnum contexto, IReadOnlyList<ChaveMetricaEnum> chaves) =>
+                chaves.Sum(chave => apuracao.TotaisPorContextoChave.GetValueOrDefault((contexto, chave)));
+
+            DateTime? UltimoUso(ContextoMetricaEnum contexto) =>
+                apuracao.UltimoAcessoPorContexto.TryGetValue(contexto, out DateTime data) ? data : null;
+
+            IReadOnlyList<PontoTemporal> Atividade(ContextoMetricaEnum contexto, IReadOnlyList<ChaveMetricaEnum> chaves) =>
+                apuracao.Metricas
+                    .Where(m => m.Contexto == contexto && chaves.Contains(m.Chave))
+                    .GroupBy(m => m.Data.Date)
+                    .OrderBy(g => g.Key)
+                    .Select(g => new PontoTemporal(g.Key, g.Sum(m => m.Valor)))
+                    .ToList();
+
+            // Hoje a única origem "valor mais recente" carregada é a de aplicações.
+            long ValorIndicador(ContextoMetricaEnum contexto, DefinicaoIndicador indicador) =>
+                indicador.Origem == OrigemIndicador.ValorMaisRecente
+                    ? apuracao.AplicacoesPorContexto.GetValueOrDefault(contexto)
+                    : Somar(contexto, indicador.Chaves);
+
+            IReadOnlyList<IndicadorServico> MontarIndicadores(DefinicaoServico definicao)
+            {
+                var lista = new List<IndicadorServico>();
+
+                foreach (DefinicaoIndicador indicador in definicao.Indicadores)
+                {
+                    long valor = ValorIndicador(definicao.Contexto, indicador);
+                    lista.Add(new IndicadorServico(indicador.Rotulo, valor, FormatoIndicador.Quantidade));
+
+                    if (indicador.GeraEconomiaHoras)
+                        lista.Add(new IndicadorServico(
+                            "Horas economizadas",
+                            valor * indicador.HorasPorUnidade!.Value,
+                            FormatoIndicador.Horas));
+                }
+
+                return lista;
+            }
+
             DetalheServico? MontarDetalhe(DefinicaoServico definicao)
             {
                 if (!definicao.PossuiDetalhes)
                     return null;
 
-                long totalPrincipal = apuracao.SomarChaves(definicao.Contexto, definicao.ChavesTotalPrincipal);
+                DefinicaoIndicador? indicadorAtividade =
+                    definicao.Indicadores.FirstOrDefault(i => i.GeraAtividadePeriodo);
 
-                return new DetalheServico(
-                    definicao.IncluiAplicacoes ? apuracao.ObterAplicacoes(definicao.Contexto) : null,
-                    definicao.RotuloTotalPrincipal,
-                    totalPrincipal,
-                    definicao.GeraEconomiaHoras ? totalPrincipal * definicao.HorasPorUnidade!.Value : null,
-                    apuracao.ApurarAtividade(definicao.Contexto, definicao.ChavesTotalPrincipal),
-                    definicao.Especificacoes
-                        .Select(e => new ValorPorRotulo(e.Rotulo, apuracao.SomarChave(definicao.Contexto, e.Chave)))
-                        .ToList());
+                IReadOnlyList<PontoTemporal> atividade = indicadorAtividade is null
+                    ? new List<PontoTemporal>()
+                    : Atividade(definicao.Contexto, indicadorAtividade.Chaves);
+
+                IReadOnlyList<ValorPorRotulo> especificacoes = definicao.Indicadores
+                    .SelectMany(i => i.EspecificacoesSeguras)
+                    .Select(e => new ValorPorRotulo(
+                        e.Rotulo, apuracao.TotaisPorContextoChave.GetValueOrDefault((definicao.Contexto, e.Chave))))
+                    .ToList();
+
+                return new DetalheServico(MontarIndicadores(definicao), atividade, especificacoes);
             }
 
             return CatalogoServicos.Todos
@@ -75,33 +130,46 @@ namespace Autoglass.PlataformaHUB.Domain.Services
                     definicao.Contexto,
                     definicao.Nome,
                     definicao.Categoria,
-                    apuracao.ObterAcessos(definicao.Contexto),
-                    apuracao.ObterUltimoAcesso(definicao.Contexto),
+                    apuracao.AcessosPorContexto.GetValueOrDefault(definicao.Contexto),
+                    UltimoUso(definicao.Contexto),
                     MontarDetalhe(definicao)))
                 .ToList();
         }
 
         // ---------- Visão Geral ----------
-        private static VisaoGeral MontarVisaoGeral(ApuracaoMetricas apuracao, IReadOnlyList<ServicoDetalhado> servicos)
+        private static VisaoGeral MontarVisaoGeral(ContextoApuracao apuracao, IReadOnlyList<ServicoDetalhado> servicos)
         {
-            int totalServicos = CatalogoServicos.Todos.Count;
-            int servicosAcessados = servicos.Count(s => s.Acessos > 0);
-            decimal percentualAcessados = totalServicos == 0
-                ? 0m
-                : Math.Round((decimal)servicosAcessados / totalServicos * 100m, 2);
+            long Somar(ContextoMetricaEnum contexto, IReadOnlyList<ChaveMetricaEnum> chaves) =>
+                chaves.Sum(chave => apuracao.TotaisPorContextoChave.GetValueOrDefault((contexto, chave)));
 
-            decimal horasEconomizadas = servicos
-                .Where(s => s.Detalhe?.HorasEconomizadas is not null)
-                .Sum(s => s.Detalhe!.HorasEconomizadas!.Value);
+            decimal EconomiaServico(DefinicaoServico definicao) =>
+                definicao.Indicadores
+                    .Where(i => i.GeraEconomiaHoras)
+                    .Sum(i => Somar(definicao.Contexto, i.Chaves) * i.HorasPorUnidade!.Value);
+
+            long acessosPlataforma = servicos.Sum(s => s.Acessos);
+            int servicosAcessados = servicos.Count(s => s.Acessos > 0);
+            decimal percentualAcessados = servicos.Count == 0
+                ? 0m
+                : Math.Round((decimal)servicosAcessados / servicos.Count * 100m, 2);
+
+            decimal horasEconomizadas = CatalogoServicos.Todos.Sum(EconomiaServico);
 
             long provisionamentosInfra = CatalogoServicos.ServicosInfraestrutura
-                .Sum(d => apuracao.SomarChaves(d.Contexto, d.ChavesTotalPrincipal));
+                .Sum(d => Somar(d.Contexto, d.ChavesPrincipais));
 
             var indicadores = new IndicadoresGerais(
-                apuracao.TotalAcessos,
+                acessosPlataforma,
                 percentualAcessados,
                 Math.Round(horasEconomizadas, 2),
                 provisionamentosInfra);
+
+            IReadOnlyList<PontoTemporal> acessosPorPeriodo = apuracao.Metricas
+                .Where(m => m.Chave == CatalogoServicos.ChaveAcessos)
+                .GroupBy(m => m.Data.Date)
+                .OrderBy(g => g.Key)
+                .Select(g => new PontoTemporal(g.Key, g.Sum(m => m.Valor)))
+                .ToList();
 
             IReadOnlyList<ValorPorServico> maisAcessados = servicos
                 .OrderByDescending(s => s.Acessos)
@@ -109,25 +177,25 @@ namespace Autoglass.PlataformaHUB.Domain.Services
                 .Select(s => new ValorPorServico(s.Nome, s.Acessos))
                 .ToList();
 
-            IReadOnlyList<EconomiaPorServico> maiorEconomia = servicos
-                .Where(s => s.Detalhe?.HorasEconomizadas is not null)
-                .OrderByDescending(s => s.Detalhe!.HorasEconomizadas!.Value)
-                .ThenBy(s => s.Nome)
-                .Select(s => new EconomiaPorServico(s.Nome, s.Detalhe!.HorasEconomizadas!.Value))
+            IReadOnlyList<EconomiaPorServico> maiorEconomia = CatalogoServicos.Todos
+                .Where(d => d.Indicadores.Any(i => i.GeraEconomiaHoras))
+                .Select(d => new EconomiaPorServico(d.Nome, Math.Round(EconomiaServico(d), 2)))
+                .OrderByDescending(e => e.Horas)
+                .ThenBy(e => e.Servico)
                 .ToList();
 
-            return new VisaoGeral(indicadores, apuracao.AcessosPorPeriodo(), maisAcessados, maiorEconomia);
+            return new VisaoGeral(indicadores, acessosPorPeriodo, maisAcessados, maiorEconomia);
         }
 
         // ---------- Visão Empresas ----------
-        private static VisaoEmpresas MontarVisaoEmpresas(ApuracaoMetricas apuracao)
+        private static VisaoEmpresas MontarVisaoEmpresas(ContextoApuracao apuracao)
         {
             HashSet<(ContextoMetricaEnum, ChaveMetricaEnum)> paresProvisionamento = CatalogoServicos.ServicosProvisionamento
-                .SelectMany(d => d.ChavesTotalPrincipal.Select(ch => (d.Contexto, ch)))
+                .SelectMany(d => d.ChavesPrincipais.Select(ch => (d.Contexto, ch)))
                 .ToHashSet();
 
             HashSet<(ContextoMetricaEnum, ChaveMetricaEnum)> paresInfraestrutura = CatalogoServicos.ServicosInfraestrutura
-                .SelectMany(d => d.ChavesTotalPrincipal.Select(ch => (d.Contexto, ch)))
+                .SelectMany(d => d.ChavesPrincipais.Select(ch => (d.Contexto, ch)))
                 .ToHashSet();
 
             List<Metrica> metricasProvisionamento = apuracao.Metricas
@@ -180,75 +248,13 @@ namespace Autoglass.PlataformaHUB.Domain.Services
         }
 
         /// <summary>
-        /// Agrupa em memória as métricas do período para apurações repetidas de forma eficiente.
+        /// Contêiner com os dados de apuração (brutos e pré-agregados) necessários para montar as visões.
         /// </summary>
-        private sealed class ApuracaoMetricas
-        {
-            private readonly IReadOnlyList<Metrica> _metricas;
-            private readonly IReadOnlyDictionary<ContextoMetricaEnum, DateTime> _ultimoAcessoPorContexto;
-            private readonly IReadOnlyDictionary<ContextoMetricaEnum, long> _aplicacoesPorContexto;
-            private readonly Dictionary<(ContextoMetricaEnum, ChaveMetricaEnum), long> _totaisPorContextoChave;
-            private readonly Dictionary<ContextoMetricaEnum, long> _acessosPorContexto;
-
-            public ApuracaoMetricas(
-                IReadOnlyList<Metrica> metricas,
-                IReadOnlyDictionary<ContextoMetricaEnum, DateTime> ultimoAcessoPorContexto,
-                IReadOnlyDictionary<ContextoMetricaEnum, long> aplicacoesPorContexto)
-            {
-                _metricas = metricas;
-                _ultimoAcessoPorContexto = ultimoAcessoPorContexto;
-                _aplicacoesPorContexto = aplicacoesPorContexto;
-
-                _totaisPorContextoChave = metricas
-                    .GroupBy(m => (m.Contexto, m.Chave))
-                    .ToDictionary(g => g.Key, g => g.Sum(m => m.Valor));
-
-                _acessosPorContexto = metricas
-                    .Where(m => m.Chave == CatalogoServicos.ChaveAcessos)
-                    .GroupBy(m => m.Contexto)
-                    .ToDictionary(g => g.Key, g => g.Sum(m => m.Valor));
-            }
-
-            public IReadOnlyList<Metrica> Metricas => _metricas;
-
-            public long TotalAcessos => _acessosPorContexto.Values.Sum();
-
-            public long ObterAcessos(ContextoMetricaEnum contexto) =>
-                _acessosPorContexto.TryGetValue(contexto, out long valor) ? valor : 0;
-
-            public DateTime? ObterUltimoAcesso(ContextoMetricaEnum contexto) =>
-                _ultimoAcessoPorContexto.TryGetValue(contexto, out DateTime data) ? data : null;
-
-            public long ObterAplicacoes(ContextoMetricaEnum contexto) =>
-                _aplicacoesPorContexto.TryGetValue(contexto, out long valor) ? valor : 0;
-
-            public long SomarChave(ContextoMetricaEnum contexto, ChaveMetricaEnum chave) =>
-                _totaisPorContextoChave.TryGetValue((contexto, chave), out long valor) ? valor : 0;
-
-            public long SomarChaves(ContextoMetricaEnum contexto, IReadOnlyList<ChaveMetricaEnum> chaves) =>
-                chaves.Sum(chave => SomarChave(contexto, chave));
-
-            public IReadOnlyList<PontoTemporal> AcessosPorPeriodo() =>
-                _metricas
-                    .Where(m => m.Chave == CatalogoServicos.ChaveAcessos)
-                    .GroupBy(m => m.Data.Date)
-                    .OrderBy(g => g.Key)
-                    .Select(g => new PontoTemporal(g.Key, g.Sum(m => m.Valor)))
-                    .ToList();
-
-            public IReadOnlyList<PontoTemporal> ApurarAtividade(
-                ContextoMetricaEnum contexto,
-                IReadOnlyList<ChaveMetricaEnum> chaves)
-            {
-                var chavesSet = chaves.ToHashSet();
-
-                return _metricas
-                    .Where(m => m.Contexto == contexto && chavesSet.Contains(m.Chave))
-                    .GroupBy(m => m.Data.Date)
-                    .OrderBy(g => g.Key)
-                    .Select(g => new PontoTemporal(g.Key, g.Sum(m => m.Valor)))
-                    .ToList();
-            }
-        }
+        private sealed record ContextoApuracao(
+            IReadOnlyList<Metrica> Metricas,
+            IReadOnlyDictionary<ContextoMetricaEnum, DateTime> UltimoAcessoPorContexto,
+            IReadOnlyDictionary<ContextoMetricaEnum, long> AplicacoesPorContexto,
+            IReadOnlyDictionary<(ContextoMetricaEnum, ChaveMetricaEnum), long> TotaisPorContextoChave,
+            IReadOnlyDictionary<ContextoMetricaEnum, long> AcessosPorContexto);
     }
 }

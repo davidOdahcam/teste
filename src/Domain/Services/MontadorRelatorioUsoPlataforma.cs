@@ -79,50 +79,23 @@ namespace Autoglass.PlataformaHUB.Domain.Services
                     .Select(g => new PontoTemporal(g.Key, g.Sum(m => m.Valor)))
                     .ToList();
 
-            // Hoje a única origem "valor mais recente" carregada é a de aplicações.
-            long ValorIndicador(ContextoMetricaEnum contexto, DefinicaoIndicador indicador) =>
-                indicador.Origem == OrigemIndicador.ValorMaisRecente
-                    ? apuracao.AplicacoesPorContexto.GetValueOrDefault(contexto)
-                    : Somar(contexto, indicador.Chaves);
-
-            IReadOnlyList<IndicadorServico> MontarIndicadores(DefinicaoServico definicao)
-            {
-                var lista = new List<IndicadorServico>();
-
-                foreach (DefinicaoIndicador indicador in definicao.Indicadores)
-                {
-                    long valor = ValorIndicador(definicao.Contexto, indicador);
-                    lista.Add(new IndicadorServico(indicador.Rotulo, valor, FormatoIndicador.Quantidade));
-
-                    if (indicador.GeraEconomiaHoras)
-                        lista.Add(new IndicadorServico(
-                            "Horas economizadas",
-                            valor * indicador.HorasPorUnidade!.Value,
-                            FormatoIndicador.Horas));
-                }
-
-                return lista;
-            }
-
             DetalheServico? MontarDetalhe(DefinicaoServico definicao)
             {
                 if (!definicao.PossuiDetalhes)
                     return null;
 
-                DefinicaoIndicador? indicadorAtividade =
-                    definicao.Indicadores.FirstOrDefault(i => i.GeraAtividadePeriodo);
+                long total = Somar(definicao.Contexto, definicao.ChavesTotalPrincipal);
 
-                IReadOnlyList<PontoTemporal> atividade = indicadorAtividade is null
-                    ? new List<PontoTemporal>()
-                    : Atividade(definicao.Contexto, indicadorAtividade.Chaves);
-
-                IReadOnlyList<ValorPorRotulo> especificacoes = definicao.Indicadores
-                    .SelectMany(i => i.EspecificacoesSeguras)
-                    .Select(e => new ValorPorRotulo(
-                        e.Rotulo, apuracao.TotaisPorContextoChave.GetValueOrDefault((definicao.Contexto, e.Chave))))
-                    .ToList();
-
-                return new DetalheServico(MontarIndicadores(definicao), atividade, especificacoes);
+                return new DetalheServico(
+                    definicao.IncluiAplicacoes ? apuracao.AplicacoesPorContexto.GetValueOrDefault(definicao.Contexto) : null,
+                    definicao.RotuloTotalPrincipal,
+                    total,
+                    definicao.GeraEconomiaHoras ? total * definicao.HorasPorUnidade!.Value : null,
+                    Atividade(definicao.Contexto, definicao.ChavesTotalPrincipal),
+                    definicao.Especificacoes
+                        .Select(e => new ValorPorRotulo(
+                            e.Rotulo, apuracao.TotaisPorContextoChave.GetValueOrDefault((definicao.Contexto, e.Chave))))
+                        .ToList());
             }
 
             return CatalogoServicos.Todos
@@ -143,9 +116,9 @@ namespace Autoglass.PlataformaHUB.Domain.Services
                 chaves.Sum(chave => apuracao.TotaisPorContextoChave.GetValueOrDefault((contexto, chave)));
 
             decimal EconomiaServico(DefinicaoServico definicao) =>
-                definicao.Indicadores
-                    .Where(i => i.GeraEconomiaHoras)
-                    .Sum(i => Somar(definicao.Contexto, i.Chaves) * i.HorasPorUnidade!.Value);
+                definicao.GeraEconomiaHoras
+                    ? Somar(definicao.Contexto, definicao.ChavesTotalPrincipal) * definicao.HorasPorUnidade!.Value
+                    : 0m;
 
             long acessosPlataforma = servicos.Sum(s => s.Acessos);
             int servicosAcessados = servicos.Count(s => s.Acessos > 0);
@@ -156,7 +129,7 @@ namespace Autoglass.PlataformaHUB.Domain.Services
             decimal horasEconomizadas = CatalogoServicos.Todos.Sum(EconomiaServico);
 
             long provisionamentosInfra = CatalogoServicos.ServicosInfraestrutura
-                .Sum(d => Somar(d.Contexto, d.ChavesPrincipais));
+                .Sum(d => Somar(d.Contexto, d.ChavesTotalPrincipal));
 
             var indicadores = new IndicadoresGerais(
                 acessosPlataforma,
@@ -178,7 +151,7 @@ namespace Autoglass.PlataformaHUB.Domain.Services
                 .ToList();
 
             IReadOnlyList<EconomiaPorServico> maiorEconomia = CatalogoServicos.Todos
-                .Where(d => d.Indicadores.Any(i => i.GeraEconomiaHoras))
+                .Where(d => d.GeraEconomiaHoras)
                 .Select(d => new EconomiaPorServico(d.Nome, Math.Round(EconomiaServico(d), 2)))
                 .OrderByDescending(e => e.Horas)
                 .ThenBy(e => e.Servico)
@@ -191,11 +164,11 @@ namespace Autoglass.PlataformaHUB.Domain.Services
         private static VisaoEmpresas MontarVisaoEmpresas(ContextoApuracao apuracao)
         {
             HashSet<(ContextoMetricaEnum, ChaveMetricaEnum)> paresProvisionamento = CatalogoServicos.ServicosProvisionamento
-                .SelectMany(d => d.ChavesPrincipais.Select(ch => (d.Contexto, ch)))
+                .SelectMany(d => d.ChavesTotalPrincipal.Select(ch => (d.Contexto, ch)))
                 .ToHashSet();
 
             HashSet<(ContextoMetricaEnum, ChaveMetricaEnum)> paresInfraestrutura = CatalogoServicos.ServicosInfraestrutura
-                .SelectMany(d => d.ChavesPrincipais.Select(ch => (d.Contexto, ch)))
+                .SelectMany(d => d.ChavesTotalPrincipal.Select(ch => (d.Contexto, ch)))
                 .ToHashSet();
 
             List<Metrica> metricasProvisionamento = apuracao.Metricas

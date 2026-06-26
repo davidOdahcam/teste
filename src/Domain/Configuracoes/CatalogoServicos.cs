@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Autoglass.PlataformaHUB.CrossCutting.Enums;
@@ -39,285 +38,220 @@ namespace Autoglass.PlataformaHUB.Domain.Configuracoes
             // --- Integração ---
             yield return Criar(
                 ContextoMetricaEnum.FilaSqs, CategoriaServicoEnum.Integracao,
-                classificadoComoProvisionamento: true, classificadoComoInfraestrutura: true,
-                indicadores: new[]
+                rotuloPrincipal: "Provisionamentos no período",
+                chavesPrincipais: new[] { ChaveMetricaEnum.ProvisionamentosStandardQuantidade, ChaveMetricaEnum.ProvisionamentosFifoQuantidade },
+                horasPorUnidade: 6m, classificadoComoProvisionamento: true, classificadoComoInfraestrutura: true,
+                especificacoes: new[]
                 {
-                    DefinicaoIndicador.Total(
-                        "Provisionamentos no período",
-                        new[] { ChaveMetricaEnum.ProvisionamentosStandardQuantidade, ChaveMetricaEnum.ProvisionamentosFifoQuantidade },
-                        horasPorUnidade: 6m,
-                        especificacoes: new[]
-                        {
-                            new EspecificacaoServico("Standard", ChaveMetricaEnum.ProvisionamentosStandardQuantidade),
-                            new EspecificacaoServico("FIFO", ChaveMetricaEnum.ProvisionamentosFifoQuantidade)
-                        })
+                    new EspecificacaoServico("Standard", ChaveMetricaEnum.ProvisionamentosStandardQuantidade),
+                    new EspecificacaoServico("FIFO", ChaveMetricaEnum.ProvisionamentosFifoQuantidade)
                 });
 
             yield return Criar(
                 ContextoMetricaEnum.TopicoKafka, CategoriaServicoEnum.Integracao,
-                classificadoComoProvisionamento: true, classificadoComoInfraestrutura: true,
-                indicadores: new[]
-                {
-                    DefinicaoIndicador.Total(
-                        "Provisionamentos no período",
-                        new[] { ChaveMetricaEnum.ProvisionamentosQuantidade },
-                        horasPorUnidade: 7m)
-                });
+                rotuloPrincipal: "Provisionamentos no período",
+                chavesPrincipais: new[] { ChaveMetricaEnum.ProvisionamentosQuantidade },
+                horasPorUnidade: 7m, classificadoComoProvisionamento: true, classificadoComoInfraestrutura: true);
 
             yield return Criar(
                 ContextoMetricaEnum.Mensageria, CategoriaServicoEnum.Integracao,
-                indicadores: new[]
+                rotuloPrincipal: "Mensagens enviadas",
+                chavesPrincipais: new[]
                 {
-                    DefinicaoIndicador.Aplicacoes(),
-                    DefinicaoIndicador.Total(
-                        "Mensagens enviadas",
-                        new[]
-                        {
-                            ChaveMetricaEnum.MensagensEmailEnviadasQuantidade,
-                            ChaveMetricaEnum.MensagensSmsEnviadasQuantidade,
-                            ChaveMetricaEnum.MensagensSmsInterativaEnviadasQuantidade,
-                            ChaveMetricaEnum.MensagensTeamsEnviadasQuantidade,
-                            ChaveMetricaEnum.MensagensTelefoniaEnviadasQuantidade,
-                            ChaveMetricaEnum.MensagensWhatsAppEnviadasQuantidade
-                        },
-                        especificacoes: new[]
-                        {
-                            new EspecificacaoServico("E-mail", ChaveMetricaEnum.MensagensEmailEnviadasQuantidade),
-                            new EspecificacaoServico("SMS", ChaveMetricaEnum.MensagensSmsEnviadasQuantidade),
-                            new EspecificacaoServico("SMS Interativa", ChaveMetricaEnum.MensagensSmsInterativaEnviadasQuantidade),
-                            new EspecificacaoServico("Teams", ChaveMetricaEnum.MensagensTeamsEnviadasQuantidade),
-                            new EspecificacaoServico("Telefonia", ChaveMetricaEnum.MensagensTelefoniaEnviadasQuantidade),
-                            new EspecificacaoServico("WhatsApp", ChaveMetricaEnum.MensagensWhatsAppEnviadasQuantidade)
-                        })
+                    ChaveMetricaEnum.MensagensEmailEnviadasQuantidade,
+                    ChaveMetricaEnum.MensagensSmsEnviadasQuantidade,
+                    ChaveMetricaEnum.MensagensSmsInterativaEnviadasQuantidade,
+                    ChaveMetricaEnum.MensagensTeamsEnviadasQuantidade,
+                    ChaveMetricaEnum.MensagensTelefoniaEnviadasQuantidade,
+                    ChaveMetricaEnum.MensagensWhatsAppEnviadasQuantidade
+                },
+                incluiAplicacoes: true,
+                especificacoes: new[]
+                {
+                    new EspecificacaoServico("E-mail", ChaveMetricaEnum.MensagensEmailEnviadasQuantidade),
+                    new EspecificacaoServico("SMS", ChaveMetricaEnum.MensagensSmsEnviadasQuantidade),
+                    new EspecificacaoServico("SMS Interativa", ChaveMetricaEnum.MensagensSmsInterativaEnviadasQuantidade),
+                    new EspecificacaoServico("Teams", ChaveMetricaEnum.MensagensTeamsEnviadasQuantidade),
+                    new EspecificacaoServico("Telefonia", ChaveMetricaEnum.MensagensTelefoniaEnviadasQuantidade),
+                    new EspecificacaoServico("WhatsApp", ChaveMetricaEnum.MensagensWhatsAppEnviadasQuantidade)
                 });
 
             // --- Utilitários ---
             yield return Criar(
                 ContextoMetricaEnum.Feedback, CategoriaServicoEnum.Utilitarios,
-                indicadores: new[]
+                rotuloPrincipal: "Pesquisas criadas",
+                chavesPrincipais: new[]
                 {
-                    DefinicaoIndicador.Aplicacoes(),
-                    DefinicaoIndicador.Total(
-                        "Pesquisas criadas",
-                        new[]
-                        {
-                            ChaveMetricaEnum.PesquisasCsatQuantidade,
-                            ChaveMetricaEnum.PesquisasNpsQuantidade,
-                            ChaveMetricaEnum.PesquisasBinarioQuantidade
-                        },
-                        horasPorUnidade: 9m,
-                        especificacoes: new[]
-                        {
-                            new EspecificacaoServico("CSAT", ChaveMetricaEnum.PesquisasCsatQuantidade),
-                            new EspecificacaoServico("NPS", ChaveMetricaEnum.PesquisasNpsQuantidade),
-                            new EspecificacaoServico("Binário", ChaveMetricaEnum.PesquisasBinarioQuantidade)
-                        })
+                    ChaveMetricaEnum.PesquisasCsatQuantidade,
+                    ChaveMetricaEnum.PesquisasNpsQuantidade,
+                    ChaveMetricaEnum.PesquisasBinarioQuantidade
+                },
+                horasPorUnidade: 9m, incluiAplicacoes: true,
+                especificacoes: new[]
+                {
+                    new EspecificacaoServico("CSAT", ChaveMetricaEnum.PesquisasCsatQuantidade),
+                    new EspecificacaoServico("NPS", ChaveMetricaEnum.PesquisasNpsQuantidade),
+                    new EspecificacaoServico("Binário", ChaveMetricaEnum.PesquisasBinarioQuantidade)
                 });
 
             yield return Criar(
                 ContextoMetricaEnum.ArchIA, CategoriaServicoEnum.Utilitarios,
-                indicadores: new[]
+                rotuloPrincipal: "Provisionamentos no período",
+                chavesPrincipais: new[]
                 {
-                    DefinicaoIndicador.Total(
-                        "Provisionamentos no período",
-                        new[]
-                        {
-                            ChaveMetricaEnum.DocumentosArqrefCadastroQuantidade,
-                            ChaveMetricaEnum.DocumentosAdrCadastroQuantidade
-                        },
-                        horasPorUnidade: 5m,
-                        especificacoes: new[]
-                        {
-                            new EspecificacaoServico("ARQREF", ChaveMetricaEnum.DocumentosArqrefCadastroQuantidade),
-                            new EspecificacaoServico("ADR", ChaveMetricaEnum.DocumentosAdrCadastroQuantidade)
-                        })
+                    ChaveMetricaEnum.DocumentosArqrefCadastroQuantidade,
+                    ChaveMetricaEnum.DocumentosAdrCadastroQuantidade
+                },
+                horasPorUnidade: 5m,
+                especificacoes: new[]
+                {
+                    new EspecificacaoServico("ARQREF", ChaveMetricaEnum.DocumentosArqrefCadastroQuantidade),
+                    new EspecificacaoServico("ADR", ChaveMetricaEnum.DocumentosAdrCadastroQuantidade)
                 });
 
             yield return Criar(
                 ContextoMetricaEnum.Encurtador, CategoriaServicoEnum.Utilitarios,
-                indicadores: new[]
+                rotuloPrincipal: "Links encurtados",
+                chavesPrincipais: new[]
                 {
-                    DefinicaoIndicador.Total(
-                        "Links encurtados",
-                        new[]
-                        {
-                            ChaveMetricaEnum.LinksEncurtadosSimplesQuantidade,
-                            ChaveMetricaEnum.LinksEncurtadosPersonalizadosQuantidade
-                        })
+                    ChaveMetricaEnum.LinksEncurtadosSimplesQuantidade,
+                    ChaveMetricaEnum.LinksEncurtadosPersonalizadosQuantidade
                 });
 
             // --- Segurança ---
             yield return Criar(
                 ContextoMetricaEnum.Cognito, CategoriaServicoEnum.Seguranca,
-                classificadoComoProvisionamento: true,
-                indicadores: new[]
+                rotuloPrincipal: "Provisionamentos no período",
+                chavesPrincipais: new[]
                 {
-                    DefinicaoIndicador.Total(
-                        "Provisionamentos no período",
-                        new[]
-                        {
-                            ChaveMetricaEnum.ProvisionamentosUrlLoginQuantidade,
-                            ChaveMetricaEnum.ProvisionamentosAppClientQuantidade,
-                            ChaveMetricaEnum.ProvisionamentosUserPoolQuantidade
-                        },
-                        horasPorUnidade: 4m,
-                        especificacoes: new[]
-                        {
-                            new EspecificacaoServico("URL", ChaveMetricaEnum.ProvisionamentosUrlLoginQuantidade),
-                            new EspecificacaoServico("App Client", ChaveMetricaEnum.ProvisionamentosAppClientQuantidade),
-                            new EspecificacaoServico("User Pool", ChaveMetricaEnum.ProvisionamentosUserPoolQuantidade)
-                        })
+                    ChaveMetricaEnum.ProvisionamentosUrlLoginQuantidade,
+                    ChaveMetricaEnum.ProvisionamentosAppClientQuantidade,
+                    ChaveMetricaEnum.ProvisionamentosUserPoolQuantidade
+                },
+                horasPorUnidade: 4m, classificadoComoProvisionamento: true,
+                especificacoes: new[]
+                {
+                    new EspecificacaoServico("URL", ChaveMetricaEnum.ProvisionamentosUrlLoginQuantidade),
+                    new EspecificacaoServico("App Client", ChaveMetricaEnum.ProvisionamentosAppClientQuantidade),
+                    new EspecificacaoServico("User Pool", ChaveMetricaEnum.ProvisionamentosUserPoolQuantidade)
                 });
 
             yield return Criar(
                 ContextoMetricaEnum.Bitbucket, CategoriaServicoEnum.Seguranca,
-                classificadoComoProvisionamento: true,
-                indicadores: new[]
-                {
-                    DefinicaoIndicador.Total(
-                        "Provisionamentos no período",
-                        new[] { ChaveMetricaEnum.ProvisionamentosQuantidade },
-                        horasPorUnidade: 2.5m)
-                });
+                rotuloPrincipal: "Provisionamentos no período",
+                chavesPrincipais: new[] { ChaveMetricaEnum.ProvisionamentosQuantidade },
+                horasPorUnidade: 2.5m, classificadoComoProvisionamento: true);
 
             yield return Criar(
                 ContextoMetricaEnum.Auditoria, CategoriaServicoEnum.Seguranca,
-                indicadores: new[]
-                {
-                    DefinicaoIndicador.Aplicacoes(),
-                    DefinicaoIndicador.Total("Eventos", new[] { ChaveMetricaEnum.EventosQuantidade })
-                });
+                rotuloPrincipal: "Eventos",
+                chavesPrincipais: new[] { ChaveMetricaEnum.EventosQuantidade },
+                incluiAplicacoes: true);
 
             // Claims não possui detalhes.
             yield return Criar(
                 ContextoMetricaEnum.Claims, CategoriaServicoEnum.Seguranca,
-                indicadores: Array.Empty<DefinicaoIndicador>());
+                rotuloPrincipal: string.Empty,
+                chavesPrincipais: new ChaveMetricaEnum[0]);
 
             // --- Dev ---
             yield return Criar(
                 ContextoMetricaEnum.FeatureFlag, CategoriaServicoEnum.Dev,
-                classificadoComoProvisionamento: true, classificadoComoInfraestrutura: true,
-                indicadores: new[]
-                {
-                    DefinicaoIndicador.Total(
-                        "Provisionamentos no período",
-                        new[] { ChaveMetricaEnum.ProvisionamentosQuantidade },
-                        horasPorUnidade: 5m)
-                });
+                rotuloPrincipal: "Provisionamentos no período",
+                chavesPrincipais: new[] { ChaveMetricaEnum.ProvisionamentosQuantidade },
+                horasPorUnidade: 5m, classificadoComoProvisionamento: true, classificadoComoInfraestrutura: true);
 
             yield return Criar(
                 ContextoMetricaEnum.SolutionFrontend, CategoriaServicoEnum.Dev,
-                classificadoComoProvisionamento: true,
-                indicadores: new[]
+                rotuloPrincipal: "Provisionamentos no período",
+                chavesPrincipais: new[]
                 {
-                    DefinicaoIndicador.Total(
-                        "Provisionamentos no período",
-                        new[]
-                        {
-                            ChaveMetricaEnum.ProvisionamentosIonicQuantidade,
-                            ChaveMetricaEnum.ProvisionamentosDsInternoQuantidade,
-                            ChaveMetricaEnum.ProvisionamentosDsExternoQuantidade
-                        },
-                        horasPorUnidade: 10.5m,
-                        especificacoes: new[]
-                        {
-                            new EspecificacaoServico("Ionic", ChaveMetricaEnum.ProvisionamentosIonicQuantidade),
-                            new EspecificacaoServico("DS Interno", ChaveMetricaEnum.ProvisionamentosDsInternoQuantidade),
-                            new EspecificacaoServico("DS Externo", ChaveMetricaEnum.ProvisionamentosDsExternoQuantidade)
-                        })
+                    ChaveMetricaEnum.ProvisionamentosIonicQuantidade,
+                    ChaveMetricaEnum.ProvisionamentosDsInternoQuantidade,
+                    ChaveMetricaEnum.ProvisionamentosDsExternoQuantidade
+                },
+                horasPorUnidade: 10.5m, classificadoComoProvisionamento: true,
+                especificacoes: new[]
+                {
+                    new EspecificacaoServico("Ionic", ChaveMetricaEnum.ProvisionamentosIonicQuantidade),
+                    new EspecificacaoServico("DS Interno", ChaveMetricaEnum.ProvisionamentosDsInternoQuantidade),
+                    new EspecificacaoServico("DS Externo", ChaveMetricaEnum.ProvisionamentosDsExternoQuantidade)
                 });
 
             yield return Criar(
                 ContextoMetricaEnum.SolutionBackend, CategoriaServicoEnum.Dev,
-                classificadoComoProvisionamento: true,
-                indicadores: new[]
+                rotuloPrincipal: "Provisionamentos no período",
+                chavesPrincipais: new[]
                 {
-                    DefinicaoIndicador.Total(
-                        "Provisionamentos no período",
-                        new[]
-                        {
-                            ChaveMetricaEnum.ProvisionamentosKubernetesQuantidade,
-                            ChaveMetricaEnum.ProvisionamentosSwarmQuantidade,
-                            ChaveMetricaEnum.ProvisionamentosFargateQuantidade
-                        },
-                        horasPorUnidade: 12m,
-                        especificacoes: new[]
-                        {
-                            new EspecificacaoServico("Kubernetes", ChaveMetricaEnum.ProvisionamentosKubernetesQuantidade),
-                            new EspecificacaoServico("Swarm", ChaveMetricaEnum.ProvisionamentosSwarmQuantidade),
-                            new EspecificacaoServico("Fargate", ChaveMetricaEnum.ProvisionamentosFargateQuantidade)
-                        })
+                    ChaveMetricaEnum.ProvisionamentosKubernetesQuantidade,
+                    ChaveMetricaEnum.ProvisionamentosSwarmQuantidade,
+                    ChaveMetricaEnum.ProvisionamentosFargateQuantidade
+                },
+                horasPorUnidade: 12m, classificadoComoProvisionamento: true,
+                especificacoes: new[]
+                {
+                    new EspecificacaoServico("Kubernetes", ChaveMetricaEnum.ProvisionamentosKubernetesQuantidade),
+                    new EspecificacaoServico("Swarm", ChaveMetricaEnum.ProvisionamentosSwarmQuantidade),
+                    new EspecificacaoServico("Fargate", ChaveMetricaEnum.ProvisionamentosFargateQuantidade)
                 });
 
             yield return Criar(
                 ContextoMetricaEnum.BucketS3, CategoriaServicoEnum.Dev,
-                classificadoComoProvisionamento: true, classificadoComoInfraestrutura: true,
-                indicadores: new[]
-                {
-                    DefinicaoIndicador.Total(
-                        "Provisionamentos no período",
-                        new[] { ChaveMetricaEnum.ProvisionamentosQuantidade },
-                        horasPorUnidade: 4.5m)
-                });
+                rotuloPrincipal: "Provisionamentos no período",
+                chavesPrincipais: new[] { ChaveMetricaEnum.ProvisionamentosQuantidade },
+                horasPorUnidade: 4.5m, classificadoComoProvisionamento: true, classificadoComoInfraestrutura: true);
 
             yield return Criar(
                 ContextoMetricaEnum.Liquibase, CategoriaServicoEnum.Dev,
-                classificadoComoProvisionamento: true, classificadoComoInfraestrutura: true,
-                indicadores: new[]
-                {
-                    DefinicaoIndicador.Total(
-                        "Provisionamentos no período",
-                        new[] { ChaveMetricaEnum.ProvisionamentosQuantidade },
-                        horasPorUnidade: 5.5m)
-                });
+                rotuloPrincipal: "Provisionamentos no período",
+                chavesPrincipais: new[] { ChaveMetricaEnum.ProvisionamentosQuantidade },
+                horasPorUnidade: 5.5m, classificadoComoProvisionamento: true, classificadoComoInfraestrutura: true);
 
             yield return Criar(
                 ContextoMetricaEnum.Biblioteca, CategoriaServicoEnum.Dev,
-                classificadoComoProvisionamento: true,
-                indicadores: new[]
+                rotuloPrincipal: "Provisionamentos no período",
+                chavesPrincipais: new[]
                 {
-                    DefinicaoIndicador.Total(
-                        "Provisionamentos no período",
-                        new[]
-                        {
-                            ChaveMetricaEnum.ProvisionamentosAngularQuantidade,
-                            ChaveMetricaEnum.ProvisionamentosDotnetQuantidade
-                        },
-                        horasPorUnidade: 8m,
-                        especificacoes: new[]
-                        {
-                            new EspecificacaoServico("Angular", ChaveMetricaEnum.ProvisionamentosAngularQuantidade),
-                            new EspecificacaoServico("Dotnet", ChaveMetricaEnum.ProvisionamentosDotnetQuantidade)
-                        })
+                    ChaveMetricaEnum.ProvisionamentosAngularQuantidade,
+                    ChaveMetricaEnum.ProvisionamentosDotnetQuantidade
+                },
+                horasPorUnidade: 8m, classificadoComoProvisionamento: true,
+                especificacoes: new[]
+                {
+                    new EspecificacaoServico("Angular", ChaveMetricaEnum.ProvisionamentosAngularQuantidade),
+                    new EspecificacaoServico("Dotnet", ChaveMetricaEnum.ProvisionamentosDotnetQuantidade)
                 });
 
             yield return Criar(
                 ContextoMetricaEnum.SonarQube, CategoriaServicoEnum.Dev,
-                classificadoComoProvisionamento: true, classificadoComoInfraestrutura: true,
-                indicadores: new[]
-                {
-                    DefinicaoIndicador.Total(
-                        "Provisionamentos no período",
-                        new[] { ChaveMetricaEnum.ProvisionamentosQuantidade },
-                        horasPorUnidade: 5.5m)
-                });
+                rotuloPrincipal: "Provisionamentos no período",
+                chavesPrincipais: new[] { ChaveMetricaEnum.ProvisionamentosQuantidade },
+                horasPorUnidade: 5.5m, classificadoComoProvisionamento: true, classificadoComoInfraestrutura: true);
         }
 
         private static DefinicaoServico Criar(
             ContextoMetricaEnum contexto,
             CategoriaServicoEnum categoria,
-            IReadOnlyList<DefinicaoIndicador> indicadores,
+            string rotuloPrincipal,
+            IReadOnlyList<ChaveMetricaEnum> chavesPrincipais,
+            decimal? horasPorUnidade = null,
+            bool incluiAplicacoes = false,
             bool classificadoComoProvisionamento = false,
-            bool classificadoComoInfraestrutura = false)
+            bool classificadoComoInfraestrutura = false,
+            IReadOnlyList<EspecificacaoServico>? especificacoes = null)
         {
             return new DefinicaoServico
             {
                 Contexto = contexto,
                 Nome = contexto.ObterDescricao(),
                 Categoria = categoria,
+                RotuloTotalPrincipal = rotuloPrincipal,
+                ChavesTotalPrincipal = chavesPrincipais,
+                HorasPorUnidade = horasPorUnidade,
+                IncluiAplicacoes = incluiAplicacoes,
                 ClassificadoComoProvisionamento = classificadoComoProvisionamento,
                 ClassificadoComoInfraestrutura = classificadoComoInfraestrutura,
-                Indicadores = indicadores
+                Especificacoes = especificacoes ?? new List<EspecificacaoServico>()
             };
         }
     }

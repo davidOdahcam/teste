@@ -38,7 +38,6 @@ namespace Autoglass.PlataformaHUB.Domain.Configuracoes
             // --- Integração ---
             yield return Criar(
                 ContextoMetricaEnum.FilaSqs, CategoriaServicoEnum.Integracao,
-                rotuloPrincipal: "Provisionamentos no período",
                 chavesPrincipais: new[] { ChaveMetricaEnum.ProvisionamentosStandardQuantidade, ChaveMetricaEnum.ProvisionamentosFifoQuantidade },
                 horasPorUnidade: 6m, classificadoComoProvisionamento: true, classificadoComoInfraestrutura: true,
                 especificacoes: new[]
@@ -49,13 +48,11 @@ namespace Autoglass.PlataformaHUB.Domain.Configuracoes
 
             yield return Criar(
                 ContextoMetricaEnum.TopicoKafka, CategoriaServicoEnum.Integracao,
-                rotuloPrincipal: "Provisionamentos no período",
                 chavesPrincipais: new[] { ChaveMetricaEnum.ProvisionamentosQuantidade },
                 horasPorUnidade: 7m, classificadoComoProvisionamento: true, classificadoComoInfraestrutura: true);
 
             yield return Criar(
                 ContextoMetricaEnum.Mensageria, CategoriaServicoEnum.Integracao,
-                rotuloPrincipal: "Mensagens enviadas",
                 chavesPrincipais: new[]
                 {
                     ChaveMetricaEnum.MensagensEmailEnviadasQuantidade,
@@ -79,7 +76,6 @@ namespace Autoglass.PlataformaHUB.Domain.Configuracoes
             // --- Utilitários ---
             yield return Criar(
                 ContextoMetricaEnum.Feedback, CategoriaServicoEnum.Utilitarios,
-                rotuloPrincipal: "Pesquisas criadas",
                 chavesPrincipais: new[]
                 {
                     ChaveMetricaEnum.PesquisasCsatQuantidade,
@@ -96,7 +92,6 @@ namespace Autoglass.PlataformaHUB.Domain.Configuracoes
 
             yield return Criar(
                 ContextoMetricaEnum.ArchIA, CategoriaServicoEnum.Utilitarios,
-                rotuloPrincipal: "Provisionamentos no período",
                 chavesPrincipais: new[]
                 {
                     ChaveMetricaEnum.DocumentosArqrefCadastroQuantidade,
@@ -111,7 +106,6 @@ namespace Autoglass.PlataformaHUB.Domain.Configuracoes
 
             yield return Criar(
                 ContextoMetricaEnum.Encurtador, CategoriaServicoEnum.Utilitarios,
-                rotuloPrincipal: "Links encurtados",
                 chavesPrincipais: new[]
                 {
                     ChaveMetricaEnum.LinksEncurtadosSimplesQuantidade,
@@ -121,7 +115,6 @@ namespace Autoglass.PlataformaHUB.Domain.Configuracoes
             // --- Segurança ---
             yield return Criar(
                 ContextoMetricaEnum.Cognito, CategoriaServicoEnum.Seguranca,
-                rotuloPrincipal: "Provisionamentos no período",
                 chavesPrincipais: new[]
                 {
                     ChaveMetricaEnum.ProvisionamentosUrlLoginQuantidade,
@@ -138,32 +131,27 @@ namespace Autoglass.PlataformaHUB.Domain.Configuracoes
 
             yield return Criar(
                 ContextoMetricaEnum.Bitbucket, CategoriaServicoEnum.Seguranca,
-                rotuloPrincipal: "Provisionamentos no período",
                 chavesPrincipais: new[] { ChaveMetricaEnum.ProvisionamentosQuantidade },
                 horasPorUnidade: 2.5m, classificadoComoProvisionamento: true);
 
             yield return Criar(
                 ContextoMetricaEnum.Auditoria, CategoriaServicoEnum.Seguranca,
-                rotuloPrincipal: "Eventos",
                 chavesPrincipais: new[] { ChaveMetricaEnum.EventosQuantidade },
                 incluiAplicacoes: true);
 
             // Claims não possui detalhes.
             yield return Criar(
                 ContextoMetricaEnum.Claims, CategoriaServicoEnum.Seguranca,
-                rotuloPrincipal: string.Empty,
                 chavesPrincipais: new ChaveMetricaEnum[0]);
 
             // --- Dev ---
             yield return Criar(
                 ContextoMetricaEnum.FeatureFlag, CategoriaServicoEnum.Dev,
-                rotuloPrincipal: "Provisionamentos no período",
                 chavesPrincipais: new[] { ChaveMetricaEnum.ProvisionamentosQuantidade },
                 horasPorUnidade: 5m, classificadoComoProvisionamento: true, classificadoComoInfraestrutura: true);
 
             yield return Criar(
                 ContextoMetricaEnum.SolutionFrontend, CategoriaServicoEnum.Dev,
-                rotuloPrincipal: "Provisionamentos no período",
                 chavesPrincipais: new[]
                 {
                     ChaveMetricaEnum.ProvisionamentosIonicQuantidade,
@@ -180,7 +168,6 @@ namespace Autoglass.PlataformaHUB.Domain.Configuracoes
 
             yield return Criar(
                 ContextoMetricaEnum.SolutionBackend, CategoriaServicoEnum.Dev,
-                rotuloPrincipal: "Provisionamentos no período",
                 chavesPrincipais: new[]
                 {
                     ChaveMetricaEnum.ProvisionamentosKubernetesQuantidade,
@@ -197,19 +184,16 @@ namespace Autoglass.PlataformaHUB.Domain.Configuracoes
 
             yield return Criar(
                 ContextoMetricaEnum.BucketS3, CategoriaServicoEnum.Dev,
-                rotuloPrincipal: "Provisionamentos no período",
                 chavesPrincipais: new[] { ChaveMetricaEnum.ProvisionamentosQuantidade },
                 horasPorUnidade: 4.5m, classificadoComoProvisionamento: true, classificadoComoInfraestrutura: true);
 
             yield return Criar(
                 ContextoMetricaEnum.Liquibase, CategoriaServicoEnum.Dev,
-                rotuloPrincipal: "Provisionamentos no período",
                 chavesPrincipais: new[] { ChaveMetricaEnum.ProvisionamentosQuantidade },
                 horasPorUnidade: 5.5m, classificadoComoProvisionamento: true, classificadoComoInfraestrutura: true);
 
             yield return Criar(
                 ContextoMetricaEnum.Biblioteca, CategoriaServicoEnum.Dev,
-                rotuloPrincipal: "Provisionamentos no período",
                 chavesPrincipais: new[]
                 {
                     ChaveMetricaEnum.ProvisionamentosAngularQuantidade,
@@ -224,7 +208,6 @@ namespace Autoglass.PlataformaHUB.Domain.Configuracoes
 
             yield return Criar(
                 ContextoMetricaEnum.SonarQube, CategoriaServicoEnum.Dev,
-                rotuloPrincipal: "Provisionamentos no período",
                 chavesPrincipais: new[] { ChaveMetricaEnum.ProvisionamentosQuantidade },
                 horasPorUnidade: 5.5m, classificadoComoProvisionamento: true, classificadoComoInfraestrutura: true);
         }
@@ -232,7 +215,6 @@ namespace Autoglass.PlataformaHUB.Domain.Configuracoes
         private static DefinicaoServico Criar(
             ContextoMetricaEnum contexto,
             CategoriaServicoEnum categoria,
-            string rotuloPrincipal,
             IReadOnlyList<ChaveMetricaEnum> chavesPrincipais,
             decimal? horasPorUnidade = null,
             bool incluiAplicacoes = false,
@@ -245,7 +227,6 @@ namespace Autoglass.PlataformaHUB.Domain.Configuracoes
                 Contexto = contexto,
                 Nome = contexto.ObterDescricao(),
                 Categoria = categoria,
-                RotuloTotalPrincipal = rotuloPrincipal,
                 ChavesTotalPrincipal = chavesPrincipais,
                 HorasPorUnidade = horasPorUnidade,
                 IncluiAplicacoes = incluiAplicacoes,

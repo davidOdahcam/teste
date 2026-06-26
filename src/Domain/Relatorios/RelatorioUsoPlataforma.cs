@@ -45,7 +45,6 @@ namespace Autoglass.PlataformaHUB.Domain.Relatorios
 
     public sealed record DetalheServico(
         long? Aplicacoes,
-        string RotuloTotal,
         long Total,
         decimal? HorasEconomizadas,
         IReadOnlyList<PontoTemporal> AtividadePorPeriodo,

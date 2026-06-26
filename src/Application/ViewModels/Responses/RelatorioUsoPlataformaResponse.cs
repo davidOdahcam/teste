@@ -37,7 +37,6 @@ namespace Autoglass.PlataformaHUB.Application.ViewModels.Responses
 
     public sealed record DetalheServicoResponse(
         long? Aplicacoes,
-        string RotuloTotal,
         long Total,
         decimal? HorasEconomizadas,
         IReadOnlyList<PontoTemporalResponse> AtividadePorPeriodo,

@@ -88,7 +88,6 @@ namespace Autoglass.PlataformaHUB.Domain.Services
 
                 return new DetalheServico(
                     definicao.IncluiAplicacoes ? apuracao.AplicacoesPorContexto.GetValueOrDefault(definicao.Contexto) : null,
-                    definicao.RotuloTotalPrincipal,
                     total,
                     definicao.GeraEconomiaHoras ? total * definicao.HorasPorUnidade!.Value : null,
                     Atividade(definicao.Contexto, definicao.ChavesTotalPrincipal),

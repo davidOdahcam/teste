@@ -25,9 +25,6 @@ namespace Autoglass.PlataformaHUB.Domain.Configuracoes
         /// <summary>Categoria de agrupamento do serviço.</summary>
         public CategoriaServicoEnum Categoria { get; init; }
 
-        /// <summary>Rótulo do total principal exibido no detalhe (ex.: "Provisionamentos no período").</summary>
-        public string RotuloTotalPrincipal { get; init; } = string.Empty;
-
         /// <summary>Chaves somadas para compor o total principal do serviço no período.</summary>
         public IReadOnlyList<ChaveMetricaEnum> ChavesTotalPrincipal { get; init; } = new List<ChaveMetricaEnum>();
 

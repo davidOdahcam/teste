@@ -64,7 +64,6 @@ namespace Autoglass.PlataformaHUB.Application.Services
                 ? null
                 : new DetalheServicoResponse(
                     servico.Detalhe.Aplicacoes,
-                    servico.Detalhe.RotuloTotal,
                     servico.Detalhe.Total,
                     servico.Detalhe.HorasEconomizadas,
                     servico.Detalhe.AtividadePorPeriodo.Select(MapearPonto).ToList(),
